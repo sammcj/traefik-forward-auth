@@ -41,6 +41,9 @@ type NewOpenIDConnectOptions struct {
 	TokenIssuer string
 	// Request timeout; defaults to 10s
 	RequestTimeout time.Duration
+	// Scopes for requesting the token
+	// This is optional and defaults to "openid profile email"
+	Scopes string
 	// Key for generating PKCE code verifiers
 	// Enables the use of PKCE if non-empty
 	PKCEKey []byte
@@ -77,6 +80,11 @@ func NewOpenIDConnect(ctx context.Context, opts NewOpenIDConnectOptions) (*OpenI
 		opts.RequestTimeout = 10 * time.Second
 	}
 
+	// Set default scopes if not specified
+	if opts.Scopes == "" {
+		opts.Scopes = "openid profile email"
+	}
+
 	// Create the provider
 	const providerType = "openidconnect"
 	metadata := ProviderMetadata{
@@ -93,6 +101,7 @@ func NewOpenIDConnect(ctx context.Context, opts NewOpenIDConnectOptions) (*OpenI
 
 		RequestTimeout:   opts.RequestTimeout,
 		TokenIssuer:      opts.TokenIssuer,
+		Scopes:           opts.Scopes,
 		PKCEKey:          opts.PKCEKey,
 		TLSSkipVerify:    opts.TLSSkipVerify,
 		TLSCACertificate: opts.TLSCACertificate,
@@ -145,6 +154,7 @@ func newOpenIDConnectInternal(providerType string, providerMetadata ProviderMeta
 
 		RequestTimeout:   opts.RequestTimeout,
 		TokenIssuer:      opts.TokenIssuer,
+		Scopes:           opts.Scopes,
 		PKCEKey:          opts.PKCEKey,
 		TLSSkipVerify:    opts.TLSSkipVerify,
 		TLSCACertificate: opts.TLSCACertificate,

@@ -93,6 +93,7 @@ portals:
 | <a id="config-opt-portals.$.providers.$-google-portals-$-providers-$-google-clientsecret"></a>`portals.$.providers.$.google.clientSecret` | string | Client secret for the Google auth application<br>One of `clientSecret` and `clientSecretFile` is required.| **Required** |
 | <a id="config-opt-portals.$.providers.$-google-portals-$-providers-$-google-clientsecretfile"></a>`portals.$.providers.$.google.clientSecretFile` | string | File containing the client secret for the Google auth application<br>This is an alternative to passing the secret as `clientSecret`<br>One of `clientSecret` and `clientSecretFile` is required.|  |
 | <a id="config-opt-portals.$.providers.$-google-portals-$-providers-$-google-requesttimeout"></a>`portals.$.providers.$.google.requestTimeout` | duration | Timeout for network requests for Google auth| Default: _"10s"_ |
+| <a id="config-opt-portals.$.providers.$-google-portals-$-providers-$-google-scopes"></a>`portals.$.providers.$.google.scopes` | string | OAuth2 scopes to request| Default: _"openid profile email"_ |
 | <a id="config-opt-portals.$.providers.$-google-portals-$-providers-$-google-icon"></a>`portals.$.providers.$.google.icon` | string | Optional icon for the provider<br>Defaults to the standard icon for the provider|  |
 | <a id="config-opt-portals.$.providers.$-google-portals-$-providers-$-google-color"></a>`portals.$.providers.$.google.color` | string | Optional color scheme for the provider<br>Allowed values include all color schemes available in Tailwind 4<br>Defaults to the standard color for the provider|  |
 
@@ -111,6 +112,8 @@ portals:
           #clientSecretFile: "/var/run/secrets/traefik-forward-auth/google/client-secret"
           ## Default: "10s"
           #requestTimeout: "10s"
+          ## Default: "openid profile email"
+          #scopes: "openid profile email"
           #icon: "google"
           #color: "yellow"
 ```
@@ -127,6 +130,7 @@ portals:
 | <a id="config-opt-portals.$.providers.$-microsoftentraid-portals-$-providers-$-microsoftentraid-clientsecretfile"></a>`portals.$.providers.$.microsoftEntraID.clientSecretFile` | string | File containing the client secret for the Microsoft Entra ID application.<br>This is an alternative to passing the secret as `clientSecret`|  |
 | <a id="config-opt-portals.$.providers.$-microsoftentraid-portals-$-providers-$-microsoftentraid-azurefederatedidentity"></a>`portals.$.providers.$.microsoftEntraID.azureFederatedIdentity` | string | Enables the usage of Federated Identity Credentials to obtain assertions for confidential clients for Microsoft Entra ID applications.<br>This is an alternative to using client secrets, when the application is running in Azure in an environment that supports Managed Identity, or in an environment that supports Workload Identity Federation with Microsoft Entra ID.<br>Currently, these values are supported:<br><br>- `ManagedIdentity`: uses a system-assigned managed identity<br>- `ManagedIdentity=client-id`: uses a user-assigned managed identity with client id "client-id" (e.g. "ManagedIdentity=00000000-0000-0000-0000-000000000000")<br>- `WorkloadIdentity`: uses workload identity, e.g. for Kubernetes|  |
 | <a id="config-opt-portals.$.providers.$-microsoftentraid-portals-$-providers-$-microsoftentraid-requesttimeout"></a>`portals.$.providers.$.microsoftEntraID.requestTimeout` | duration | Timeout for network requests for Microsoft Entra ID auth| Default: _"10s"_ |
+| <a id="config-opt-portals.$.providers.$-microsoftentraid-portals-$-providers-$-microsoftentraid-scopes"></a>`portals.$.providers.$.microsoftEntraID.scopes` | string | OAuth2 scopes to request| Default: _"openid profile email"_ |
 | <a id="config-opt-portals.$.providers.$-microsoftentraid-portals-$-providers-$-microsoftentraid-icon"></a>`portals.$.providers.$.microsoftEntraID.icon` | string | Optional icon for the provider<br>Defaults to the standard icon for the provider|  |
 | <a id="config-opt-portals.$.providers.$-microsoftentraid-portals-$-providers-$-microsoftentraid-color"></a>`portals.$.providers.$.microsoftEntraID.color` | string | Optional color scheme for the provider<br>Allowed values include all color schemes available in Tailwind 4<br>Defaults to the standard color for the provider|  |
 
@@ -147,6 +151,8 @@ portals:
           #azureFederatedIdentity: ""
           ## Default: "10s"
           #requestTimeout: "10s"
+          ## Default: "openid profile email"
+          #scopes: "openid profile email"
           #icon: "microsoft"
           #color: "cyan"
 ```
@@ -162,6 +168,7 @@ portals:
 | <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-clientsecretfile"></a>`portals.$.providers.$.openIDConnect.clientSecretFile` | string | File containing the client secret for the OpenID Connect application<br>This is an alternative to passing the secret as `clientSecret`|  |
 | <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-tokenissuer"></a>`portals.$.providers.$.openIDConnect.tokenIssuer` | string | OpenID Connect token issuer<br>The OpenID Connect configuration document will be fetched at `<token-issuer>/.well-known/openid-configuration`| **Required** |
 | <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-requesttimeout"></a>`portals.$.providers.$.openIDConnect.requestTimeout` | duration | Timeout for network requests for OpenID Connect auth| Default: _"10s"_ |
+| <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-scopes"></a>`portals.$.providers.$.openIDConnect.scopes` | string | OAuth2 scopes to request| Default: _"openid profile email"_ |
 | <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-enablepkce"></a>`portals.$.providers.$.openIDConnect.enablePKCE` | boolean | If true, enables the use of PKCE during the code exchange.| Default: _false_ |
 | <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-tlsinsecureskipverify"></a>`portals.$.providers.$.openIDConnect.tlsInsecureSkipVerify` | boolean | If true, skips validating TLS certificates when connecting to the OpenID Connect Identity Provider.| Default: _false_ |
 | <a id="config-opt-portals.$.providers.$-openidconnect-portals-$-providers-$-openidconnect-tlscacertificatepem"></a>`portals.$.providers.$.openIDConnect.tlsCACertificatePEM` | string | Optional PEM-encoded CA certificate to trust when connecting to the OpenID Connect Identity Provider.|  |
@@ -185,6 +192,8 @@ portals:
           tokenIssuer: "https://id.external-example.com"
           ## Default: "10s"
           #requestTimeout: "10s"
+          ## Default: "openid profile email"
+          #scopes: "openid profile email"
           ## Default: false
           #enablePKCE: false
           ## Default: false
@@ -206,6 +215,7 @@ portals:
 | <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-clientsecret"></a>`portals.$.providers.$.pocketID.clientSecret` | string | Client secret for the client application| **Required** |
 | <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-clientsecretfile"></a>`portals.$.providers.$.pocketID.clientSecretFile` | string | File containing the client secret for the client application<br>This is an alternative to passing the secret as `clientSecret`|  |
 | <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-requesttimeout"></a>`portals.$.providers.$.pocketID.requestTimeout` | duration | Timeout for network requests for Pocket ID auth| Default: _"10s"_ |
+| <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-scopes"></a>`portals.$.providers.$.pocketID.scopes` | string | OAuth2 scopes to request| Default: _"openid profile email groups"_ |
 | <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-enablepkce"></a>`portals.$.providers.$.pocketID.enablePKCE` | boolean | If true, enables the use of PKCE during the code exchange.| Default: _false_ |
 | <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-tlsinsecureskipverify"></a>`portals.$.providers.$.pocketID.tlsInsecureSkipVerify` | boolean | If true, skips validating TLS certificates when connecting to the Pocket ID server.| Default: _false_ |
 | <a id="config-opt-portals.$.providers.$-pocketid-portals-$-providers-$-pocketid-tlscacertificatepem"></a>`portals.$.providers.$.pocketID.tlsCACertificatePEM` | string | Optional PEM-encoded CA certificate to trust when connecting to the Pocket ID server.|  |
@@ -229,6 +239,8 @@ portals:
           #clientSecretFile: "/var/run/secrets/traefik-forward-auth/pocketid/client-secret"
           ## Default: "10s"
           #requestTimeout: "10s"
+          ## Default: "openid profile email groups"
+          #scopes: "openid profile email groups"
           ## Default: false
           #enablePKCE: false
           ## Default: false

@@ -26,6 +26,9 @@ type NewGoogleOptions struct {
 	ClientSecret string
 	// Request timeout; defaults to 10s
 	RequestTimeout time.Duration
+	// Scopes for requesting the token
+	// This is optional and defaults to "openid profile email"
+	Scopes string
 }
 
 func (o NewGoogleOptions) ToNewOpenIDConnectOptions() NewOpenIDConnectOptions {
@@ -33,6 +36,7 @@ func (o NewGoogleOptions) ToNewOpenIDConnectOptions() NewOpenIDConnectOptions {
 		ClientID:       o.ClientID,
 		ClientSecret:   o.ClientSecret,
 		RequestTimeout: o.RequestTimeout,
+		Scopes:         o.Scopes,
 		TokenIssuer:    "https://accounts.google.com",
 
 		// Profile modifier functions that add the "hd" claim
@@ -66,7 +70,12 @@ func NewGoogle(opts NewGoogleOptions) (*Google, error) {
 		Icon:        "google",
 		Color:       "yellow",
 	}
-	oidc, err := newOpenIDConnectInternal(providerType, metadata, opts.ToNewOpenIDConnectOptions(), OAuth2Endpoints{
+	// Set default scopes if not specified
+	oidcOpts := opts.ToNewOpenIDConnectOptions()
+	if oidcOpts.Scopes == "" {
+		oidcOpts.Scopes = "openid profile email"
+	}
+	oidc, err := newOpenIDConnectInternal(providerType, metadata, oidcOpts, OAuth2Endpoints{
 		Authorization: "https://accounts.google.com/o/oauth2/v2/auth",
 		Token:         "https://oauth2.googleapis.com/token",
 		UserInfo:      "https://www.googleapis.com/oauth2/v1/userinfo",

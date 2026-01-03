@@ -22,6 +22,9 @@ type NewPocketIDOptions struct {
 	ClientSecret string
 	// Request timeout; defaults to 10s
 	RequestTimeout time.Duration
+	// Scopes for requesting the token
+	// This is optional and defaults to "openid profile email groups"
+	Scopes string
 	// Key for generating PKCE code verifiers
 	// Enables the use of PKCE if non-empty
 	PKCEKey []byte
@@ -36,6 +39,7 @@ func (o NewPocketIDOptions) ToNewOpenIDConnectOptions() NewOpenIDConnectOptions 
 		ClientID:         o.ClientID,
 		ClientSecret:     o.ClientSecret,
 		RequestTimeout:   o.RequestTimeout,
+		Scopes:           o.Scopes,
 		TokenIssuer:      o.Endpoint,
 		PKCEKey:          o.PKCEKey,
 		TLSSkipVerify:    o.TLSSkipVerify,
@@ -59,6 +63,10 @@ func NewPocketID(opts NewPocketIDOptions) (*PocketID, error) {
 	}
 
 	oidcOpts := opts.ToNewOpenIDConnectOptions()
+	// Set default scopes if not specified
+	if oidcOpts.Scopes == "" {
+		oidcOpts.Scopes = "openid profile email groups"
+	}
 
 	const providerType = "pocketid"
 	metadata := ProviderMetadata{

@@ -301,6 +301,12 @@ portals:
           ## Default: "10s"
           #requestTimeout: "10s"
 
+          ## portals.$.providers.$.google.scopes (string)
+          ## Description:
+          ##   OAuth2 scopes to request
+          ## Default: "openid profile email"
+          #scopes: "openid profile email"
+
           ## portals.$.providers.$.google.icon (string)
           ## Description:
           ##   Optional icon for the provider
@@ -375,6 +381,12 @@ portals:
           ## Default: "10s"
           #requestTimeout: "10s"
 
+          ## portals.$.providers.$.microsoftEntraID.scopes (string)
+          ## Description:
+          ##   OAuth2 scopes to request
+          ## Default: "openid profile email"
+          #scopes: "openid profile email"
+
           ## portals.$.providers.$.microsoftEntraID.icon (string)
           ## Description:
           ##   Optional icon for the provider
@@ -437,6 +449,12 @@ portals:
           ##   Timeout for network requests for OpenID Connect auth
           ## Default: "10s"
           #requestTimeout: "10s"
+
+          ## portals.$.providers.$.openIDConnect.scopes (string)
+          ## Description:
+          ##   OAuth2 scopes to request
+          ## Default: "openid profile email"
+          #scopes: "openid profile email"
 
           ## portals.$.providers.$.openIDConnect.enablePKCE (boolean)
           ## Description:
@@ -521,6 +539,12 @@ portals:
           ##   Timeout for network requests for Pocket ID auth
           ## Default: "10s"
           #requestTimeout: "10s"
+
+          ## portals.$.providers.$.pocketID.scopes (string)
+          ## Description:
+          ##   OAuth2 scopes to request
+          ## Default: "openid profile email groups"
+          #scopes: "openid profile email groups"
 
           ## portals.$.providers.$.pocketID.enablePKCE (boolean)
           ## Description:

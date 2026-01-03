@@ -109,6 +109,9 @@ type ProviderConfig_Google struct {
 	// Timeout for network requests for Google auth
 	// +default "10s"
 	RequestTimeout time.Duration `yaml:"requestTimeout"`
+	// OAuth2 scopes to request
+	// +default "openid profile email"
+	Scopes string `yaml:"scopes"`
 	// Optional icon for the provider
 	// Defaults to the standard icon for the provider
 	// +example "google"
@@ -125,6 +128,7 @@ func (p *ProviderConfig_Google) GetAuthProvider(_ context.Context) (auth.Provide
 		ClientID:       p.ClientID,
 		ClientSecret:   p.ClientSecret,
 		RequestTimeout: p.RequestTimeout,
+		Scopes:         p.Scopes,
 	}
 	err := populateSecretFromFile(&opts.ClientSecret, p.ClientSecretFile)
 	if err != nil {
@@ -186,6 +190,9 @@ type ProviderConfig_MicrosoftEntraID struct {
 	// Timeout for network requests for Microsoft Entra ID auth
 	// +default "10s"
 	RequestTimeout time.Duration `yaml:"requestTimeout"`
+	// OAuth2 scopes to request
+	// +default "openid profile email"
+	Scopes string `yaml:"scopes"`
 	// Optional icon for the provider
 	// Defaults to the standard icon for the provider
 	// +example "microsoft"
@@ -206,6 +213,7 @@ func (p *ProviderConfig_MicrosoftEntraID) GetAuthProvider(_ context.Context) (au
 		ClientSecret:           p.ClientSecret,
 		AzureFederatedIdentity: p.AzureFederatedIdentity,
 		RequestTimeout:         p.RequestTimeout,
+		Scopes:                 p.Scopes,
 		PKCEKey:                p.config.internal.pkceKey,
 	}
 	err := populateSecretFromFile(&opts.ClientSecret, p.ClientSecretFile)
@@ -261,6 +269,9 @@ type ProviderConfig_OpenIDConnect struct {
 	// Timeout for network requests for OpenID Connect auth
 	// +default "10s"
 	RequestTimeout time.Duration `yaml:"requestTimeout"`
+	// OAuth2 scopes to request
+	// +default "openid profile email"
+	Scopes string `yaml:"scopes"`
 	// If true, enables the use of PKCE during the code exchange.
 	// +default false
 	EnablePKCE bool `yaml:"enablePKCE"`
@@ -311,6 +322,7 @@ func (p *ProviderConfig_OpenIDConnect) GetAuthProvider(ctx context.Context) (aut
 		ClientSecret:     p.ClientSecret,
 		TokenIssuer:      p.TokenIssuer,
 		RequestTimeout:   p.RequestTimeout,
+		Scopes:           p.Scopes,
 		PKCEKey:          pkceKey,
 		TLSSkipVerify:    p.TLSInsecureSkipVerify,
 		TLSCACertificate: tlsCACertificate,
@@ -367,6 +379,9 @@ type ProviderConfig_PocketID struct {
 	// Timeout for network requests for Pocket ID auth
 	// +default "10s"
 	RequestTimeout time.Duration `yaml:"requestTimeout"`
+	// OAuth2 scopes to request
+	// +default "openid profile email groups"
+	Scopes string `yaml:"scopes"`
 	// If true, enables the use of PKCE during the code exchange.
 	// +default false
 	EnablePKCE bool `yaml:"enablePKCE"`
@@ -417,6 +432,7 @@ func (p *ProviderConfig_PocketID) GetAuthProvider(ctx context.Context) (auth.Pro
 		ClientID:         p.ClientID,
 		ClientSecret:     p.ClientSecret,
 		RequestTimeout:   p.RequestTimeout,
+		Scopes:           p.Scopes,
 		PKCEKey:          pkceKey,
 		TLSSkipVerify:    p.TLSInsecureSkipVerify,
 		TLSCACertificate: tlsCACertificate,
