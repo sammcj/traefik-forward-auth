@@ -17,9 +17,11 @@ import (
 )
 
 const (
-	tailscaleWhoisClaimIP      = "ip"
-	tailscaleWhoisClaimTailnet = "tailnet"
-	headerXForwardedFor        = "X-Forwarded-For"
+	tailscaleWhoisClaimIP           = "ip"
+	tailscaleWhoisClaimTailnet      = "tailnet"
+	tailscaleWhoisClaimHostname     = "hostname"
+	tailscaleWhoisClaimTaggedDevice = "taggedDevice"
+	headerXForwardedFor             = "X-Forwarded-For"
 )
 
 // TailscaleWhois is a Provider for authenticating with Tailscale Whois, for requests that are coming over a Tailscale network.
@@ -96,12 +98,6 @@ func (a *TailscaleWhois) SeamlessAuth(r *http.Request) (*user.Profile, error) {
 		return nil, fmt.Errorf("failed to perform WhoIs using Tailscale: %w", err)
 	}
 
-	// The nginx-auth code disallows access to tagged devices
-	// https://github.com/tailscale/tailscale/blob/169778e23bb8e315b1cdfcb54d9d59daace4a57d/cmd/nginx-auth/nginx-auth.go#L59-L63
-	if info.Node.IsTagged() {
-		return nil, fmt.Errorf("node '%s' is tagged", info.Node.Hostinfo.Hostname())
-	}
-
 	// Tailnet of connected node
 	// When accessing shared nodes, this will be empty because the Tailnet of the sharee is not exposed
 	var tailnet string
@@ -119,20 +115,41 @@ func (a *TailscaleWhois) SeamlessAuth(r *http.Request) (*user.Profile, error) {
 		return nil, fmt.Errorf("user is part of tailnet '%s', wanted '%s'", tailnet, a.allowedTailnet)
 	}
 
+	hostname := strings.TrimSuffix(info.Node.Name, ".")
+
+	// Name and login name are empty for tagged nodes
+	taggedDevice := info.Node.IsTagged()
+	var (
+		fullName, userId string
+		email            *user.ProfileEmail
+	)
+	if taggedDevice {
+		// For tagged nodes, we use the hostname as user ID
+		userId = hostname
+		fullName = hostname
+	} else {
+		fullName = info.UserProfile.DisplayName
+		// For legacy reasons, we use the local part of the user's email adress
+		userId = strings.Split(info.UserProfile.LoginName, "@")[0]
+		email = &user.ProfileEmail{
+			Value: info.UserProfile.LoginName,
+		}
+	}
+
 	// Create the user profile object
 	profile := &user.Profile{
 		Provider: a.GetProviderName(),
-		ID:       strings.Split(info.UserProfile.LoginName, "@")[0],
-		Email: &user.ProfileEmail{
-			Value: info.UserProfile.LoginName,
-		},
+		ID:       userId,
+		Email:    email,
 		Name: user.ProfileName{
-			FullName: info.UserProfile.DisplayName,
+			FullName: fullName,
 		},
 		Picture: info.UserProfile.ProfilePicURL,
 		AdditionalClaims: map[string]any{
-			tailscaleWhoisClaimTailnet: tailnet,
-			tailscaleWhoisClaimIP:      sourceIP.String(),
+			tailscaleWhoisClaimHostname:     strings.TrimSuffix(info.Node.Name, "."),
+			tailscaleWhoisClaimTailnet:      tailnet,
+			tailscaleWhoisClaimIP:           sourceIP.String(),
+			tailscaleWhoisClaimTaggedDevice: taggedDevice,
 		},
 	}
 
@@ -170,13 +187,24 @@ func (a *TailscaleWhois) ValidateRequestClaims(r *http.Request, profile *user.Pr
 }
 
 func (a *TailscaleWhois) PopulateAdditionalClaims(token jwt.Token, setClaimFn func(key string, val any)) {
-	var val string
+	var (
+		val string
+		ok  bool
+	)
 
+	if token.Get(tailscaleWhoisClaimHostname, &val) == nil && val != "" {
+		setClaimFn(tailscaleWhoisClaimHostname, val)
+	}
 	if token.Get(tailscaleWhoisClaimIP, &val) == nil && val != "" {
 		setClaimFn(tailscaleWhoisClaimIP, val)
 	}
 	if token.Get(tailscaleWhoisClaimTailnet, &val) == nil && val != "" {
 		setClaimFn(tailscaleWhoisClaimTailnet, val)
+	}
+
+	// Only include the taggedDevice claim if it's true
+	if token.Get(tailscaleWhoisClaimTaggedDevice, &ok) == nil && ok {
+		setClaimFn(tailscaleWhoisClaimTaggedDevice, true)
 	}
 
 	// Also populate capability claims if present
