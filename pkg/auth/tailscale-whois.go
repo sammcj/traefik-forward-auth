@@ -11,6 +11,7 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwt"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	tailscale "tailscale.com/client/local"
+	"tailscale.com/tailcfg"
 
 	"github.com/italypaleale/traefik-forward-auth/pkg/user"
 )
@@ -25,8 +26,9 @@ const (
 type TailscaleWhois struct {
 	baseProvider
 
-	requestTimeout time.Duration
-	allowedTailnet string
+	requestTimeout  time.Duration
+	allowedTailnet  string
+	capabilityNames []string
 
 	httpClient *http.Client
 }
@@ -37,6 +39,8 @@ type NewTailscaleWhoisOptions struct {
 	AllowedTailnet string
 	// Request timeout; defaults to 10s
 	RequestTimeout time.Duration
+	// Names of capabilities to read from Tailscale peer capabilities
+	CapabilityNames []string
 }
 
 // NewTailscaleWhois returns a new TailscaleWhois provider
@@ -59,9 +63,10 @@ func NewTailscaleWhois(opts NewTailscaleWhoisOptions) (*TailscaleWhois, error) {
 				Color:       "slate",
 			},
 		},
-		httpClient:     httpClient,
-		requestTimeout: reqTimeout,
-		allowedTailnet: opts.AllowedTailnet,
+		httpClient:      httpClient,
+		requestTimeout:  reqTimeout,
+		allowedTailnet:  opts.AllowedTailnet,
+		capabilityNames: opts.CapabilityNames,
 	}
 	return a, nil
 }
@@ -131,6 +136,18 @@ func (a *TailscaleWhois) SeamlessAuth(r *http.Request) (*user.Profile, error) {
 		},
 	}
 
+	// Add peer capabilities to additional claims if configured
+	if len(a.capabilityNames) > 0 && info.CapMap != nil {
+		for _, capName := range a.capabilityNames {
+			// Look for the capability in the CapMap
+			capValues, ok := info.CapMap[tailcfg.PeerCapability(capName)]
+			if ok && len(capValues) > 0 {
+				// Add with https:// prefix as the key
+				profile.AdditionalClaims["https://"+capName] = capValues
+			}
+		}
+	}
+
 	return profile, nil
 }
 
@@ -160,6 +177,18 @@ func (a *TailscaleWhois) PopulateAdditionalClaims(token jwt.Token, setClaimFn fu
 	}
 	if token.Get(tailscaleWhoisClaimTailnet, &val) == nil && val != "" {
 		setClaimFn(tailscaleWhoisClaimTailnet, val)
+	}
+
+	// Also populate capability claims if present
+	// Capability claims have keys with https:// prefix
+	if len(a.capabilityNames) > 0 {
+		for _, capName := range a.capabilityNames {
+			claimKey := "https://" + capName
+			var capValues any
+			if token.Get(claimKey, &capValues) == nil {
+				setClaimFn(claimKey, capValues)
+			}
+		}
 	}
 }
 

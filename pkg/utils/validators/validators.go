@@ -3,6 +3,7 @@ package validators
 import (
 	"net"
 	"regexp"
+	"strings"
 )
 
 // Validates a string is a valid email address
@@ -106,4 +107,25 @@ func IsHostname(s string) bool {
 	}
 
 	return nonNumeric
+}
+
+// IsTailscaleCapabilityName validates that a string is a valid Tailscale capability name (URL with host and path, no protocol).
+// Returns true if the string contains a hostname and a path (e.g., "example.com/path").
+func IsTailscaleCapabilityName(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	// Find the first slash to separate host and path
+	slashIdx := strings.Index(s, "/")
+
+	// Must have both host and path
+	if slashIdx <= 0 || slashIdx >= len(s)-1 {
+		return false
+	}
+
+	host := s[:slashIdx]
+
+	// Validate the hostname part
+	return IsHostname(host)
 }
