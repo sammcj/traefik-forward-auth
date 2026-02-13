@@ -83,15 +83,13 @@ func init() {
 			defer res.Body.Close()
 
 			if res.StatusCode < 200 || res.StatusCode >= 300 {
-				if err != nil {
-					slog.ErrorContext(ctx,
-						"Healthcheck failed",
-						"status", res.StatusCode,
-						"url", url,
-						"ms", time.Since(start).Milliseconds(),
-					)
-					os.Exit(1)
-				}
+				slog.ErrorContext(ctx,
+					"Healthcheck failed",
+					"status", res.StatusCode,
+					"url", url,
+					"ms", time.Since(start).Milliseconds(),
+				)
+				os.Exit(1)
 			}
 
 			if flags.Verbose {

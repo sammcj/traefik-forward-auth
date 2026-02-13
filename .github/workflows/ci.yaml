@@ -21,7 +21,7 @@ jobs:
       contents: read
     env:
       CGO_ENABLED: "0"
-      GOLANGCI_LINT_VERSION: "v2.4.0"
+      GOLANGCI_LINT_VERSION: "v2.9.0"
     steps:
 
     - name: Check out code
@@ -31,8 +31,6 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version-file: 'go.mod'
-        # Use cache from golangci-lint
-        cache: false
 
     - name: Set up Node.js
       uses: actions/setup-node@v6

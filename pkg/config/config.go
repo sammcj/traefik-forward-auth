@@ -266,7 +266,7 @@ func (c *Config) GetInstanceID() string {
 	return c.internal.instanceID
 }
 
-// GetSessionTokenAudience returns the value of the "aud" claim for the session token
+// GetTokenAudienceClaim returns the value of the "aud" claim for the session token
 func (c *Config) GetTokenAudienceClaim() string {
 	if c.Tokens.SessionTokenAudience != "" {
 		return c.Tokens.SessionTokenAudience
@@ -274,7 +274,7 @@ func (c *Config) GetTokenAudienceClaim() string {
 	return c.Server.Hostname + c.Server.BasePath
 }
 
-// Processes the configuration
+// Process the configuration
 func (c *Config) Process(log *slog.Logger) (err error) {
 	// Check required variables
 	err = c.Validate(log)
@@ -291,7 +291,7 @@ func (c *Config) Process(log *slog.Logger) (err error) {
 	return nil
 }
 
-// Validates the configuration and performs some sanitization
+// Validate the configuration and performs some sanitization
 func (c *Config) Validate(logger *slog.Logger) error {
 	// Hostname can have an optional port
 	if c.Server.Hostname == "" {
@@ -607,8 +607,7 @@ func countSetProperties(s any) int {
 	}
 
 	var count int
-	for i := range val.NumField() {
-		field := val.Field(i)
+	for _, field := range val.Fields() {
 		if field.IsValid() && !field.IsZero() {
 			count++
 		}

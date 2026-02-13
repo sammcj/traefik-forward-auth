@@ -1,7 +1,8 @@
 //go:build unit
 
-// This file is only built when the "unit" tag is set
 package auth
+
+// This file is only built when the "unit" tag is set
 
 import (
 	"context"
@@ -34,7 +35,7 @@ func (a *TestProviderOAuth2) GetProviderType() string {
 	return "testoauth2"
 }
 
-// Use as "state" the name of a user template, as supported by getTestUserProfile
+// OAuth2AuthorizeURL uses as "state" the name of a user template, as supported by getTestUserProfile
 func (a *TestProviderOAuth2) OAuth2AuthorizeURL(state string, redirectURL string) (string, error) {
 	if state == "" {
 		return "", errors.New("parameter state is required")
@@ -51,7 +52,7 @@ func (a *TestProviderOAuth2) OAuth2AuthorizeURL(state string, redirectURL string
 	return "https://idp.example.com/oauth2/auth?" + params.Encode(), nil
 }
 
-// Use as "state" the name of a user template, as supported by getTestUserProfile
+// OAuth2ExchangeCode uses as "state" the name of a user template, as supported by getTestUserProfile
 func (a *TestProviderOAuth2) OAuth2ExchangeCode(ctx context.Context, state string, code string, redirectURL string) (OAuth2AccessToken, error) {
 	if code == "" {
 		return OAuth2AccessToken{}, errors.New("parameter code is required")
