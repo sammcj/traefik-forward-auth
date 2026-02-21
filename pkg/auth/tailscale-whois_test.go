@@ -1,14 +1,28 @@
-//go:build unit
-
 package auth
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"tailscale.com/client/tailscale/apitype"
+	"tailscale.com/tailcfg"
+
+	"github.com/italypaleale/traefik-forward-auth/pkg/user"
 )
+
+type mockTailscaleWhoIsClient struct {
+	whoIsFn func(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error)
+}
+
+func (m *mockTailscaleWhoIsClient) WhoIs(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error) {
+	return m.whoIsFn(ctx, remoteAddr)
+}
 
 func TestNewTailscaleWhois(t *testing.T) {
 	tests := []struct {
@@ -95,4 +109,66 @@ func TestTailscaleWhoisCapabilityExtraction(t *testing.T) {
 			require.JSONEq(t, tt.expected, string(marshaled))
 		})
 	}
+}
+
+func TestTailscaleWhoisSeamlessAuth(t *testing.T) {
+	const sourceIP = "100.64.0.1"
+
+	provider, err := NewTailscaleWhois(NewTailscaleWhoisOptions{
+		AllowedTailnet: "mytailnet.ts.net",
+		tsClient: &mockTailscaleWhoIsClient{
+			whoIsFn: func(_ context.Context, remoteAddr string) (*apitype.WhoIsResponse, error) {
+				if remoteAddr != sourceIP {
+					return nil, fmt.Errorf("unexpected remote addr: %s", remoteAddr)
+				}
+
+				return &apitype.WhoIsResponse{
+					Node: &tailcfg.Node{
+						Name:         "device-1.mytailnet.ts.net.",
+						ComputedName: "device-1",
+						Hostinfo:     (&tailcfg.Hostinfo{}).View(),
+					},
+					UserProfile: &tailcfg.UserProfile{
+						DisplayName:   "Alice Example",
+						LoginName:     "alice@example.com",
+						ProfilePicURL: "https://example.com/alice.png",
+					},
+				}, nil
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+	req.Header.Set(headerXForwardedFor, sourceIP)
+
+	profile, err := provider.SeamlessAuth(req)
+	require.NoError(t, err)
+	require.NotNil(t, profile.Email)
+	assert.Equal(t, "alice", profile.ID)
+	assert.Equal(t, "Alice Example", profile.Name.FullName)
+	assert.Equal(t, "alice@example.com", profile.Email.Value)
+	assert.Equal(t, "https://example.com/alice.png", profile.Picture)
+	assert.Equal(t, "device-1.mytailnet.ts.net", profile.AdditionalClaims[tailscaleWhoisClaimHostname])
+	assert.Equal(t, "mytailnet.ts.net", profile.AdditionalClaims[tailscaleWhoisClaimTailnet])
+	assert.Equal(t, sourceIP, profile.AdditionalClaims[tailscaleWhoisClaimIP])
+	assert.Equal(t, false, profile.AdditionalClaims[tailscaleWhoisClaimTaggedDevice])
+}
+
+func TestTailscaleWhoisValidateRequestClaims(t *testing.T) {
+	provider, err := NewTailscaleWhois(NewTailscaleWhoisOptions{})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+	req.Header.Set(headerXForwardedFor, "100.64.0.1")
+
+	profile := &user.Profile{
+		AdditionalClaims: map[string]any{tailscaleWhoisClaimIP: "100.64.0.1"},
+	}
+	require.NoError(t, provider.ValidateRequestClaims(req, profile))
+
+	profile.AdditionalClaims[tailscaleWhoisClaimIP] = "100.64.0.2"
+	err = provider.ValidateRequestClaims(req, profile)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "token was issued for Tailscale IP")
 }

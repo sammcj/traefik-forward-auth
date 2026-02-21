@@ -11,6 +11,7 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwt"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	tailscale "tailscale.com/client/local"
+	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tailcfg"
 
 	"github.com/italypaleale/traefik-forward-auth/pkg/user"
@@ -33,6 +34,7 @@ type TailscaleWhois struct {
 	capabilityNames []string
 
 	httpClient *http.Client
+	tsClient   tailscaleWhoIsClient
 }
 
 // NewTailscaleWhoisOptions is the options for NewTailscaleWhois
@@ -43,10 +45,18 @@ type NewTailscaleWhoisOptions struct {
 	RequestTimeout time.Duration
 	// Names of capabilities to read from Tailscale peer capabilities
 	CapabilityNames []string
+
+	// Tailscale client, for mocking
+	tsClient tailscaleWhoIsClient
 }
 
 // NewTailscaleWhois returns a new TailscaleWhois provider
 func NewTailscaleWhois(opts NewTailscaleWhoisOptions) (*TailscaleWhois, error) {
+	if opts.tsClient == nil {
+		// Set default client
+		opts.tsClient = &tailscale.Client{}
+	}
+
 	reqTimeout := opts.RequestTimeout
 	if reqTimeout < time.Second {
 		reqTimeout = 10 * time.Second
@@ -69,6 +79,7 @@ func NewTailscaleWhois(opts NewTailscaleWhoisOptions) (*TailscaleWhois, error) {
 		requestTimeout:  reqTimeout,
 		allowedTailnet:  opts.AllowedTailnet,
 		capabilityNames: opts.CapabilityNames,
+		tsClient:        opts.tsClient,
 	}
 	return a, nil
 }
@@ -90,10 +101,9 @@ func (a *TailscaleWhois) SeamlessAuth(r *http.Request) (*user.Profile, error) {
 	}
 
 	// Use the Tailscale client to authenticate the user
-	client := &tailscale.Client{}
 	reqCtx, cancel := context.WithTimeout(r.Context(), a.requestTimeout)
 	defer cancel()
-	info, err := client.WhoIs(reqCtx, sourceIP.String())
+	info, err := a.tsClient.WhoIs(reqCtx, sourceIP.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform WhoIs using Tailscale: %w", err)
 	}
@@ -218,6 +228,12 @@ func (a *TailscaleWhois) PopulateAdditionalClaims(token jwt.Token, setClaimFn fu
 			}
 		}
 	}
+}
+
+// Interface that covers tailscale.Client
+// Used for mocking in tests
+type tailscaleWhoIsClient interface {
+	WhoIs(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error)
 }
 
 // Compile-time interface assertion

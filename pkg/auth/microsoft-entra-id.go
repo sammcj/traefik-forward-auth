@@ -94,7 +94,8 @@ func (o NewMicrosoftEntraIDOptions) ToNewOpenIDConnectOptions() NewOpenIDConnect
 					profile.SetAdditionalClaim(microsoftEntraIDClaimTid, str)
 				}
 
-				if v, ok := claims[microsoftEntraIDClaimWids]; ok {
+				v, ok := claims[microsoftEntraIDClaimWids]
+				if ok {
 					wids := cast.ToStringSlice(v)
 					if len(wids) > 0 {
 						profile.SetAdditionalClaim(microsoftEntraIDClaimWids, wids)
