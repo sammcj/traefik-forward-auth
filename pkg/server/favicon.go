@@ -2,11 +2,13 @@ package server
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,35 +19,26 @@ import (
 
 func (s *Server) loadFavicon() error {
 	cfg := config.Get()
-	if cfg.Server.Favicon == "" {
+	faviconValue := strings.TrimSpace(cfg.Server.Favicon)
+	if faviconValue == "" {
 		s.favicon = nil
 		return nil
 	}
 
-	// Create the request
-	req, err := http.NewRequest(http.MethodGet, cfg.Server.Favicon, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create the favicon request for URL '%s': %w", cfg.Server.Favicon, err)
-	}
+	var (
+		data []byte
+		err  error
+	)
 
-	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Do(req)
+	// Check if the favicon is a URL
+	if strings.HasPrefix(faviconValue, "http://") || strings.HasPrefix(faviconValue, "https://") {
+		data, err = downloadFaviconFromURL(faviconValue)
+	} else {
+		// Assume it's an actual base64-encoded image
+		data, err = decodeFaviconBase64(faviconValue)
+	}
 	if err != nil {
-		return fmt.Errorf("failed to download favicon from '%s': %w", cfg.Server.Favicon, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("failed to download favicon from '%s': received HTTP status %d", cfg.Server.Favicon, resp.StatusCode)
-	}
-
-	// Read the response, max 2MB
-	data, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-	if err != nil {
-		return fmt.Errorf("failed to read downloaded favicon data: %w", err)
-	}
-	if len(data) == 0 {
-		return fmt.Errorf("downloaded favicon from '%s' is empty", cfg.Server.Favicon)
+		return err
 	}
 
 	// Detect favicon type
@@ -56,6 +49,61 @@ func (s *Server) loadFavicon() error {
 	s.favicon = favicon
 
 	return nil
+}
+
+func downloadFaviconFromURL(faviconURL string) ([]byte, error) {
+	// Create the request
+	req, err := http.NewRequest(http.MethodGet, faviconURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create the favicon request for URL '%s': %w", faviconURL, err)
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download favicon from '%s': %w", faviconURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("failed to download favicon from '%s': received HTTP status %d", faviconURL, resp.StatusCode)
+	}
+
+	// Read the response, max 2MB
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read downloaded favicon data: %w", err)
+	}
+	if len(data) == 0 {
+		return nil, fmt.Errorf("downloaded favicon from '%s' is empty", faviconURL)
+	}
+
+	return data, nil
+}
+
+func decodeFaviconBase64(value string) ([]byte, error) {
+	value = strings.Map(func(r rune) rune {
+		switch r {
+		case '\n', '\r', '\t', ' ':
+			return -1
+		default:
+			return r
+		}
+	}, value)
+
+	// Try decoding using base64-standard first, then base64-url
+	data, err := base64.RawStdEncoding.DecodeString(value)
+	if err != nil {
+		data, err = base64.RawURLEncoding.DecodeString(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode favicon base64 value: %w", err)
+		}
+	}
+	if len(data) == 0 {
+		return nil, errors.New("decoded favicon base64 value is empty")
+	}
+
+	return data, nil
 }
 
 func detectFavicon(data []byte) (*appFavicon, error) {

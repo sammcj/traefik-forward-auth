@@ -111,8 +111,10 @@ type ConfigServer struct {
 	// +example "X-Request-ID"
 	TrustedRequestIdHeader string `yaml:"trustedRequestIdHeader"`
 
-	// URL of the favicon for the app.
-	// This must be an ICO, PNG, or SVG file, and it's fetched when the server starts up.
+	// Favicon for the app.
+	// If this starts with "http://" or "https://", it's treated as a URL and fetched when the server starts up.
+	// Otherwise, it's treated as base64-encoded image data.
+	// The favicon must be an ICO, PNG, or SVG image.
 	Favicon string `yaml:"favicon"`
 }
 

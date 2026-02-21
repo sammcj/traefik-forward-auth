@@ -1,6 +1,8 @@
 package server
 
 import (
+	"encoding/base64"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,5 +44,42 @@ func TestDetectFavicon(t *testing.T) {
 		_, err := detectFavicon([]byte("GIF89a"))
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "unsupported favicon file format")
+	})
+}
+
+func TestDecodeFaviconBase64(t *testing.T) {
+	pngData := []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0x00}
+	padded := base64.StdEncoding.EncodeToString(pngData)
+	unpadded := strings.TrimRight(padded, "=")
+
+	t.Run("padded", func(t *testing.T) {
+		data, err := decodeFaviconBase64(padded)
+		require.NoError(t, err)
+		assert.Equal(t, pngData, data)
+	})
+
+	t.Run("unpadded", func(t *testing.T) {
+		data, err := decodeFaviconBase64(unpadded)
+		require.NoError(t, err)
+		assert.Equal(t, pngData, data)
+	})
+
+	t.Run("whitespace", func(t *testing.T) {
+		withWhitespace := " \n\t" + unpadded + "\r\n "
+		data, err := decodeFaviconBase64(withWhitespace)
+		require.NoError(t, err)
+		assert.Equal(t, pngData, data)
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		_, err := decodeFaviconBase64("%%%")
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "failed to decode favicon base64 value")
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		_, err := decodeFaviconBase64(" \n\t ")
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "decoded favicon base64 value is empty")
 	})
 }
