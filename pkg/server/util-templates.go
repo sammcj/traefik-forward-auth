@@ -133,6 +133,9 @@ func (s *Server) renderSigninTemplate(c *gin.Context, portal *Portal, stateCooki
 	type signinTemplateData struct {
 		Title            string
 		BaseUrl          string
+		FaviconHref      string
+		FaviconType      string
+		FaviconSizes     string
 		Providers        []signingTemplateData_Provider
 		LogoutBanner     bool
 		BackgroundLarge  string
@@ -148,6 +151,11 @@ func (s *Server) renderSigninTemplate(c *gin.Context, portal *Portal, stateCooki
 		LogoutBanner:     logoutBanner,
 		BackgroundLarge:  portal.PagesBackgroundLarge,
 		BackgroundMedium: portal.PagesBackgroundMedium,
+	}
+	if s.favicon != nil {
+		data.FaviconHref = s.favicon.Path
+		data.FaviconType = s.favicon.LinkType
+		data.FaviconSizes = s.favicon.LinkSizes
 	}
 
 	var i int
@@ -189,6 +197,9 @@ func (s *Server) renderAuthenticatedTemplate(c *gin.Context, portal *Portal, pro
 	type authenticatedTemplateData struct {
 		Title            string
 		BaseUrl          string
+		FaviconHref      string
+		FaviconType      string
+		FaviconSizes     string
 		Provider         string
 		User             string
 		LogoutUrl        string
@@ -198,7 +209,7 @@ func (s *Server) renderAuthenticatedTemplate(c *gin.Context, portal *Portal, pro
 	}
 
 	nonce := setPageSecurityHeaders(c, portal)
-	c.HTML(http.StatusOK, "authenticated.html.tpl", authenticatedTemplateData{
+	data := authenticatedTemplateData{
 		Title:            portal.DisplayName,
 		BaseUrl:          conf.Server.BasePath,
 		Provider:         provider.GetProviderDisplayName(),
@@ -207,5 +218,11 @@ func (s *Server) renderAuthenticatedTemplate(c *gin.Context, portal *Portal, pro
 		BackgroundLarge:  portal.PagesBackgroundLarge,
 		BackgroundMedium: portal.PagesBackgroundMedium,
 		CspNonce:         nonce,
-	})
+	}
+	if s.favicon != nil {
+		data.FaviconHref = s.favicon.Path
+		data.FaviconType = s.favicon.LinkType
+		data.FaviconSizes = s.favicon.LinkSizes
+	}
+	c.HTML(http.StatusOK, "authenticated.html.tpl", data)
 }

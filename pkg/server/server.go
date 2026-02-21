@@ -81,6 +81,7 @@ type Server struct {
 	// Templates and icons
 	templates *template.Template
 	icons     map[string]string
+	favicon   *appFavicon
 
 	// Server start time, used for Last-Modified headers
 	startTime time.Time
@@ -195,11 +196,17 @@ func (s *Server) initAppServer(log *slog.Logger) (err error) {
 	// Logger middleware that removes the auth code from the URL
 	codeFilterLogMw := s.MiddlewareLoggerMask(regexp.MustCompile(`(\?|&)(code|state|session_state)=([^&]*)`), "$1$2***")
 
+	err = s.loadFavicon()
+	if err != nil {
+		return fmt.Errorf("failed to load favicon: %w", err)
+	}
+
 	// Add static routes & pages
 	err = s.addStaticRoutes(conf.Server.BasePath)
 	if err != nil {
 		return fmt.Errorf("failed to set up static routes: %w", err)
 	}
+	s.addFaviconRoute(conf.Server.BasePath)
 	err = s.loadTemplates(s.appRouter)
 	if err != nil {
 		return fmt.Errorf("failed to set up pages: %w", err)
@@ -484,6 +491,14 @@ func (s *Server) loadTLSConfig(log *slog.Logger) (tlsConfig *tls.Config, watchFn
 	log.Debug("Loaded TLS certificates from PEM values")
 
 	return tlsConfig, nil, nil
+}
+
+type appFavicon struct {
+	Path        string
+	ContentType string
+	LinkType    string
+	LinkSizes   string
+	Data        []byte
 }
 
 type Portal struct {

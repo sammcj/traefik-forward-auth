@@ -5,6 +5,9 @@
     <meta charset="utf-8">
     <title>{{ .Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ if .FaviconHref }}
+    <link rel="icon" href="{{ .BaseUrl }}/{{ .FaviconHref }}"{{ if .FaviconSizes }} sizes="{{ .FaviconSizes }}"{{ end }}{{ if .FaviconType }} type="{{ .FaviconType }}"{{ end }}>
+    {{ end }}
     <link rel="stylesheet" href="{{ .BaseUrl }}/style.css" nonce="{{ .CspNonce }}">
 </head>
 

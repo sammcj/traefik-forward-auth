@@ -110,6 +110,10 @@ type ConfigServer struct {
 	// If this option is empty, or if it contains the name of a header that is not found in an incoming request, a random UUID is generated as request ID.
 	// +example "X-Request-ID"
 	TrustedRequestIdHeader string `yaml:"trustedRequestIdHeader"`
+
+	// URL of the favicon for the app.
+	// This must be an ICO, PNG, or SVG file, and it's fetched when the server starts up.
+	Favicon string `yaml:"favicon"`
 }
 
 type ConfigCookies struct {
